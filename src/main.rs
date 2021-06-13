@@ -1,10 +1,15 @@
-//extern crate clap;
+extern crate clap;
 
+use clap::ArgMatches;
+use clap::{App, Arg};
 use git2::BranchType;
 use git2::Repository;
-use std::env;
-//use clap::{Arg, App, SubCommand};
+use std::fs::File;
+use std::io::Write;
 //use ascii::
+
+const REPO_VERSION: &str = "repo_version";
+const TYPESCRIPT: &str = "typescript";
 
 fn get_newst_tag_test(repo_path: &str) -> (Option<String>, String) {
     let repo = match Repository::open(repo_path) {
@@ -137,18 +142,90 @@ fn get_head_tag(repo_path: &str) -> (Option<String>, String) {
         */
     }
 
-    println!("head: {:?}, commit: {:?}", commit.id(), commit);
-    (None, String::from("commit_id"))
+    // println!("head: {:?}, commit: {:?}", commit.id(), commit);
+    (None, commit.id().to_string())
+}
+
+fn parse_arguments() -> ArgMatches {
+    let repo_version = App::new(REPO_VERSION)
+        .about(
+            "自动生成目的语言代码\n
+             如typescript: export const VERSION = '0.0.1-beta@xxx'",
+        )
+        .arg(
+            Arg::new("repo_url")
+                .index(1)
+                .about("代码仓库地址： 1. path/to/git/repo"),
+        )
+        .arg(Arg::new("out_file").index(2).about("要生成的文件"))
+        .arg(
+            Arg::new("language")
+                .index(3)
+                .about("目的编程语言")
+                .default_value(TYPESCRIPT), // default typescript
+        );
+    let matches = App::new("rust-cli")
+        .version("0.1.0")
+        .author("Daryl.Xu <ziqiang_xu@qq.com>")
+        .about("Some useful command for development")
+        .subcommand(repo_version)
+        //   .subcommand(Subcommand::with_name("test")
+        //               .about("controls testing features")
+        //               .version("1.3")
+        //               .author("Someone E. <someone_else@other.com>")
+        //               .arg_from_usage("-d, --debug 'Print debug information'"))
+        .get_matches();
+    matches
 }
 
 fn main() {
-    let args: Vec<String> = env::args().collect();
-    let repo_url = &args[1].to_string();
-    // let (tag_name, id) = get_head_tag("/home/daryl/git/words-picker");
-    //    let (tag_name, id) = get_head_tag("/home/daryl/git/rust-cli");
-    let (version_tag, commit_id) = get_head_tag(repo_url);
-    match version_tag {
-        Some(tag) => println!("tag name: {} \ncommit-id:{}", tag, commit_id),
-        None => println!("have no tag, {}", commit_id),
-    };
+    let app_matches = parse_arguments();
+
+    match app_matches.subcommand() {
+        Some((name, matches)) => {
+            println!("Subcommand calling: {}", name);
+            // TODO 把各种if替换成match
+            if name == REPO_VERSION {
+                // 执行 REPO_VERSION相关动作
+                let repo_url = matches.value_of("repo_url").unwrap();
+                let out_file = matches.value_of("out_file").unwrap();
+                let language = matches.value_of("language").unwrap();
+
+                // Get the version
+                let (version_tag, commit_id) = get_head_tag(repo_url);
+                let version;
+                match version_tag {
+                    Some(tag) => {
+                        println!("tag name: {} \ncommit-id:{}", tag, commit_id);
+                        version = format!("{}@{}", tag, commit_id);
+                    },
+                    None => {
+                        println!("have no tag, {}", commit_id);
+                        version = format!("{}", commit_id)
+                    },
+                };
+
+                // Generate the code
+                let code;
+                if language == TYPESCRIPT {
+                    code = format!("export const VERSION = '{}'\n", version);
+                } else {
+                    panic!("Language '{}' Not support yet", language);
+                }
+
+                // write the code to file
+                let mut file = match File::create(&out_file) {
+                    Ok(file) => file,
+                    Err(e) => {
+                        panic!("Failed to create file: {}. \n error:{}", out_file, e);
+                    }
+                };
+                file.write_all(code.as_bytes()).unwrap();
+            } else {
+                panic!("Subcommand '{}' is not support yet!", name);
+            }
+
+        }
+        None => println!("Nothing to do!"),
+    }
 }
