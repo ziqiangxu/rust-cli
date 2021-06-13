@@ -150,7 +150,8 @@ fn parse_arguments() -> ArgMatches {
     let repo_version = App::new(REPO_VERSION)
         .about(
             "自动生成目的语言代码\n
-             如typescript: export const VERSION = '0.0.1-beta@xxx'",
+             如生成typescript代码: export const VERSION = '0.0.1-beta@xxx'\n
+             使用示例：rust-cli repo_version /path/to/git/repo version.ts typescript",
         )
         .arg(
             Arg::new("repo_url")
