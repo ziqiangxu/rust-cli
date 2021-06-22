@@ -168,7 +168,7 @@ fn parse_arguments() -> ArgMatches {
                 .default_value(JSON), // default typescript
         );
     let matches = App::new("rust-cli")
-        .version("0.1.0")
+        .version("0.2.0")
         .author("Daryl.Xu <ziqiang_xu@qq.com>")
         .about("Some useful command for development")
         .subcommand(repo_version)
