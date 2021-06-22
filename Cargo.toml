@@ -8,3 +8,4 @@ edition = "2018"
 [dependencies]
 git2 = "0.13.20"
 clap = "3.0.0-beta.2"
+json = "0.12.4"

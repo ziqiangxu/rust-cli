@@ -6,10 +6,12 @@ use git2::BranchType;
 use git2::Repository;
 use std::fs::File;
 use std::io::Write;
+use json::object;
 //use ascii::
 
 const REPO_VERSION: &str = "repo_version";
 const TYPESCRIPT: &str = "typescript";
+const JSON: &str = "json";
 
 fn get_newst_tag_test(repo_path: &str) -> (Option<String>, String) {
     let repo = match Repository::open(repo_path) {
@@ -151,7 +153,7 @@ fn parse_arguments() -> ArgMatches {
         .about(
             "自动生成目的语言代码\n
              如生成typescript代码: export const VERSION = '0.0.1-beta@xxx'\n
-             使用示例：rust-cli repo_version /path/to/git/repo version.ts typescript",
+             使用示例：rust-cli repo_version /path/to/git/repo version.json json",
         )
         .arg(
             Arg::new("repo_url")
@@ -162,8 +164,8 @@ fn parse_arguments() -> ArgMatches {
         .arg(
             Arg::new("language")
                 .index(3)
-                .about("目的编程语言")
-                .default_value(TYPESCRIPT), // default typescript
+                .about("目的编程语言，目前支持json、typescript")
+                .default_value(JSON), // default typescript
         );
     let matches = App::new("rust-cli")
         .version("0.1.0")
@@ -195,7 +197,7 @@ fn main() {
                 // Get the version
                 let (version_tag, commit_id) = get_head_tag(repo_url);
                 let version;
-                match version_tag {
+                match &version_tag {
                     Some(tag) => {
                         println!("tag name: {} \ncommit-id:{}", tag, commit_id);
                         version = format!("{}@{}", tag, commit_id);
@@ -208,10 +210,20 @@ fn main() {
 
                 // Generate the code
                 let code;
-                if language == TYPESCRIPT {
-                    code = format!("export const VERSION = '{}'\n", version);
-                } else {
-                    panic!("Language '{}' Not support yet", language);
+                match language {
+                    TYPESCRIPT => {
+                        code = format!("export const VERSION = '{}'\n", version);
+                    },
+                    JSON => {
+                        code = object! {
+                            tag: version_tag.unwrap_or(String::from("None")),
+                            commit_id: commit_id,
+                            version: version
+                        }.dump();
+                    },
+                    _ => {
+                        code = format!("version=version");
+                    }
                 }
 
                 // write the code to file
