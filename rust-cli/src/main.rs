@@ -158,19 +158,19 @@ fn parse_arguments() -> ArgMatches {
         .arg(
             Arg::new("repo_url")
                 .index(1)
-                .about("代码仓库地址： 1. path/to/git/repo"),
+                .help("代码仓库地址： 1. path/to/git/repo"),
         )
-        .arg(Arg::new("out_file").index(2).about("要生成的文件"))
+        .arg(Arg::new("out_file").index(2).help("要生成的文件"))
         .arg(
             Arg::new("language")
                 .index(3)
-                .about("目的编程语言，目前支持json、typescript")
+                .help("目的编程语言，目前支持json、typescript")
                 .default_value(JSON), // default typescript
         );
     let matches = App::new("rust-cli")
         .version("0.1.0")
         .author("Daryl.Xu <ziqiang_xu@qq.com>")
-        .about("Some useful command for development")
+        .help("Some useful command for development")
         .subcommand(repo_version)
         //   .subcommand(Subcommand::with_name("test")
         //               .about("controls testing features")
